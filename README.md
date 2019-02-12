@@ -29,5 +29,5 @@
   
 #### How to use mcr_DatReader.cc
   * `$ cd <your working dir>`
-  * `$ ln -s ~/[source dir]HP10L_anal/example/mcr_DatReader.cc`
+  * `$ ln -s ~/[source dir]/HP10L_anal/example/mcr_DatReader.cc`
   * `$ root 'mcr_DatReader.cc("[path to dat file]")'`
