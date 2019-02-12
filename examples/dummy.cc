@@ -1,4 +1,4 @@
-#include "MyClass.h"
+#include "DatReader.h"
 #include <iostream>
 
 using namespace std;

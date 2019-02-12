@@ -1,27 +1,33 @@
 #### HP10L analyzer
-  * mHP10L_anal
-<!---
-    * maketest is a sample of makefile
-    * You can apply MyClass for several main functions.
-    * reffered following websites
-      * general grammer: [http://shin.hateblo.jp/entry/2012/05/26/231036](http://shin.hateblo.jp/entry/2012/05/26/231036)
-      * example1: [http://urin.github.io/posts/2013/simple-makefile-for-clang](http://urin.github.io/posts/2013/simple-makefile-for-clang)
-      * example2: [http://boysenberrypi.hatenadiary.jp/entry/2014/03/15/113703](http://boysenberrypi.hatenadiary.jp/entry/2014/03/15/113703)
-      * makefile function: [https://qiita.com/chibi929/items/b8c5f36434d5d3fbfa4a](https://qiita.com/chibi929/items/b8c5f36434d5d3fbfa4a)
+  * HP10L_anal
+    * is an analysis tool for HP10L data format
+    * DatReader
+      * is a class for reading binary of HP10L
+      * binary data format is shown in pp.156 in this [URL](https://www-he.scphys.kyoto-u.ac.jp/member/kiseki/html/AXEL/e-log/e-log_nakamura-AXEL_anal002_20141212-20151224.pdf)
+      * You can use this class in macro and CINT. Look at an example in `./example/mcr_DatReader.cc`
+      * Useful functions of DatReader
+      	* `showFileHeader()`: show file header list
+	* `getMaxEventNum()`: return max event num
+	* `getMaxModuleNum()`: return max module num
+      	* `getEvent(int event_num, int read_module_num)`
+	* `getCurrentEventNum()`: return current event num
+	* `getCurrentModuleNum()`: return current module num
+	* `getAdc(int read_ch)`: return a pointer of a signal array
+	* `getClock()`: return a pointer of a clock array
+	* `getCurrentClockLength()`: return clock length of a current module
+	* `getCurrentMaxchNum()`: return max ch of a current module
 
 #### Installation of this sample
   * `$ git clone <URL>`
   * `$ make`
     * `$ ./example/dummy.cc` is compiled.
     * `$ ./bin/dummy` will be created.
-  * `$ make TARGET=root_test`
-    * `$ ./example/root_test.cc` is compiled.
-    * `$ ./bin/root_test` will be created.
+  * `$ make TARGET=draw_waveforms`
+    * `$ ./example/draw_waveforms.cc` is compiled.
+    * `$ ./bin/draw_waveforms` will be created.
+
   
-#### Using MyClass in CINT
-  * `[maketest]$ root`
-  * `root [0] #include "include/MyClass.h"`
-  * `root [1] #include "src/MyClass.cc"`
-  * `root [2] MyClass m`
-  * `root [3] m.[MyClass func or valiable]` You can use "Tab" for autocompeletion. 
-  -->
+#### How to use mcr_DatReader.cc
+  * `$ cd <your working dir>`
+  * `$ ln -s ~/[source dir]HP10L_anal/example/mcr_DatReader.cc`
+  * `$ root 'mcr_DatReader.cc("[path to dat file]")'`
