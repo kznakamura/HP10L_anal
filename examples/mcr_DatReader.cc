@@ -17,6 +17,8 @@ void mcr_DatReader(string filename = "dummy"){
   int max_event_num = m->getMaxEventNum();
   int max_module_num = m->getMaxModuleNum();
   int current_maxch_num;
+
+  m -> showFileHeader(); 
   for(int i=0; i<10; i++){
     cout << "//---- input event and module ----//" << endl;
     cout << "event num (0~" << max_event_num-1 << "): " << endl;

@@ -27,8 +27,10 @@ public:
   int getCurrentModule(){return m_current_module_num;}
   double* getAdc(int read_ch);
   double* getClock();
+  double* getTime();
   int getCurrentClockLength(){return m_current_clock_length;}
   int getCurrentMaxchNum(){return m_current_maxch_num;}
+  int getCurrentBitNum(){return m_current_bit_num;}
 
   //---- get file header ----//
   int getMaxEventNum(){return m_max_event_num;}
@@ -84,10 +86,12 @@ private:
   short *m_module_data;
   double *m_adc;
   double *m_clock;
+  double *m_time;
   int m_current_event_num;
   int m_current_module_num;
   int m_current_clock_length;
   int m_current_maxch_num;
+  int m_current_bit_num;
   
   bool readModuleData(int event_num, int read_module_num);
   bool checkEvent();

@@ -19,7 +19,7 @@ OBJS    = $(subst $(SRC_DIR),$(OBJ_DIR), $(SOURCES:.cc=.o))
 DEPENDS = $(OBJS:.o=.d)
 
 $(BIN_DIR)/$(TARGET):	$(OBJS) $(OBJ_DIR)/$(TARGET).o
-			$(CXX) -o $@ $^ $(CXXLIBS)
+			$(CXX) $(CXXFLAGS) -o $@ $^ $(CXXLIBS)
 
 $(OBJ_DIR)/%.o:	$(SRC_DIR)/%.cc 
 	@if [ ! -d $(OBJ_DIR) ]; \

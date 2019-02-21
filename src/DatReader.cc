@@ -112,7 +112,7 @@ bool DatReader::readFileHeader(){
     m_save_enable_mask.push_back( file_header1[96+module_num] );
   }
       
-  //---- chack dummy of header ----//
+  //---- check dummy of header ----//
   for(int module_num=0; module_num<::MAXMODULE; module_num++){
     if(file_header1[120+module_num] != 511){
       cerr << "#Error :File header format is broken" << endl;
@@ -252,9 +252,11 @@ bool DatReader::readModuleData(int event_num, int read_module_num){
     delete[] m_module_data;
     delete[] m_adc;
     delete[] m_clock;
+    delete[] m_time;
     m_module_data = nullptr;
     m_adc = nullptr;
-    m_adc = nullptr;
+    m_clock = nullptr;
+    m_time = nullptr;
     if(m_is_debug){
       cout << "# debug: m_module_data is deleted" << endl;
     }
@@ -266,9 +268,11 @@ bool DatReader::readModuleData(int event_num, int read_module_num){
   
   m_adc = new double[array_size];
   m_clock = new double[array_size];
+  m_time = new double[array_size];
   for(int sample=0; sample<array_size; sample++){
     m_adc[sample] = (double)m_module_data[sample];
-    m_clock[sample] = (double)(m_sampling_us.at(read_module_num)*sample);
+    m_clock[sample] = (double)sample;
+    m_time[sample] = (double)(m_sampling_us.at(read_module_num)*sample);
   }
   
   return true;
@@ -295,6 +299,7 @@ bool DatReader::getEvent(int event_num, int read_module_num){
   m_current_module_num = read_module_num;
   m_current_clock_length = m_record_length.at(read_module_num);
   m_current_maxch_num = m_read_ch_num.at(read_module_num);
+  m_current_bit_num = m_adc_bit_num.at(read_module_num);
 
   return true;
 }
@@ -320,6 +325,15 @@ double* DatReader::getClock(){
   }
 
   return m_clock;
+}
+
+double* DatReader::getTime(){
+
+ if(!checkFile() || !checkEvent()){
+    return nullptr;
+  }
+
+  return m_time;
 }
 
 bool DatReader::checkFile(){

@@ -10,7 +10,7 @@ using namespace std;
 int main(int argc, char* argv[]){
   if(argc<4){
     cout << "# Usage: " << argv[0] << " "
-	 << "[drawing datfile] [draw event] [output filename]"
+	 << "[drawing datfile] [draw event] [output canvas name]"
 	 << endl;
     return -1;
   }
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
   double *x, *y;
   int length;
   TText *t_ch[max_draw_ch];
-  TText *t_xlabel = new TText(0.75, 0.01,"ns");
+  TText *t_xlabel = new TText(0.75, 0.01,"clock");
   TText *t_ylabel = new TText(0.07, 0.5, "ADC count");
   t_xlabel -> SetTextSize(0.08);
   t_ylabel -> SetTextSize(0.08);

@@ -16,6 +16,7 @@
       * `getClock()`: return a pointer of a clock array
       * `getCurrentClockLength()`: return clock length of a current module
       * `getCurrentMaxchNum()`: return max ch of a current module
+      * `getCurrentBitNum()`: return adc bit num of a current module
 
 #### Installation of this sample
   * `$ git clone <URL>`
