@@ -1,4 +1,5 @@
 #include "DatReader.h"
+#include "MyCanvas.h"
 #include <iostream>
 #include <TGraph.h>
 #include <TCanvas.h>
@@ -32,48 +33,10 @@ int main(int argc, char* argv[]){
   t_ylabel -> SetNDC(1);
   t_ylabel -> SetTextAngle(90);
   
-  //  TApplication app("app",&argc, argv);
-
-  TCanvas *c = new TCanvas("c","c",100,100,800*5,600*5);
-  c -> cd();
-  TPad *pad[max_draw_ch];
-  double padsize_x = 1.0/10.0, padsize_y = 1.0/8.0;
-  double position_x, position_y;
-
-  for(int draw_ch=0; draw_ch<max_draw_ch; draw_ch++){
-    if(draw_ch>=0 && draw_ch<6){
-      position_x = padsize_x * (draw_ch%10 + 2.0);
-      position_y = 7.0/8.0;
-    }else if(draw_ch>=6 && draw_ch<13){
-      position_x = padsize_x * ((draw_ch-6)%10 + 1.5);
-      position_y = 6.0/8.0;
-    }else if(draw_ch>=13 && draw_ch<21){
-      position_x = padsize_x * ((draw_ch-13)%10 + 1.0);
-      position_y = 5.0/8.0;
-    }else if(draw_ch>=21 && draw_ch<30){
-      position_x = padsize_x * ((draw_ch-21)%10 +0.5);
-	position_y = 4.0/8.0;
-    }else if(draw_ch>=30 && draw_ch<40){
-      position_x = padsize_x * ((draw_ch-30)%10 + 0.0);
-      position_y = 3.0/8.0;
-    }else if(draw_ch>=40 && draw_ch<49){
-      position_x = padsize_x * ((draw_ch-40)%10 +0.5);
-      position_y = 2.0/8.0;
-    }else if(draw_ch>=49 && draw_ch<57){
-      position_x = padsize_x * ((draw_ch-49)%10 + 1.0);
-      position_y = 1.0/8.0;
-    }else if(draw_ch>=57 && draw_ch<64){
-      position_x = padsize_x * ((draw_ch-57)%10 + 1.5);
-      position_y = 0.0/8.0;
-    }else{
-      cout << "draw_ch is out of range" << endl;
-      return -1;
-      }
-
-    pad[draw_ch] = new TPad(Form("ch%d",draw_ch), Form("ch%d",draw_ch), position_x, position_y, position_x+padsize_x, position_y+padsize_y, 0, 0.01, 0);    
-    pad[draw_ch] -> Draw();
-    pad[draw_ch] -> SetNumber(draw_ch+1);
-  }
+  TApplication app("app",&argc, argv);
+  
+  MyCanvas *my_canvas = new MyCanvas("mycanvas");
+  TCanvas *c = my_canvas->cloneCanvas();
 
   for(int module=0; module<2; module++){
     wfm -> getEvent(draw_event, module);
@@ -81,7 +44,7 @@ int main(int argc, char* argv[]){
     for(int ch=0; ch<current_maxch_num; ch++){
       int draw_ch = module*current_maxch_num + ch;
       c -> cd(draw_ch+1);
-     
+
       x = wfm -> getClock();
       y = wfm -> getAdc(ch);
       length = wfm -> getCurrentClockLength();
@@ -97,11 +60,12 @@ int main(int argc, char* argv[]){
       t_ylabel -> Draw("same");
     }
   }
-  //app.Run();
+  app.Run();
   
   c -> Print(output_filename.c_str());
   cout << "# Save: --> \"" << output_filename << "\"" << endl;
   
   delete wfm;
+  delete my_canvas;
   
 }
