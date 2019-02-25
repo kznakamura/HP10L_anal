@@ -7,6 +7,8 @@
 
 using namespace std;
 
+//==== public functions for user ====//
+
 BaselineAnalizer::BaselineAnalizer(double* wave, int clock_length, int bit_num, 
 				   const bool is_debug, const int module, const int ch, const int event){
 
@@ -85,6 +87,8 @@ double BaselineAnalizer::getBaselineSigma(){
   return m_baseline_sigma;
 }
 
+
+//==== private functions for debug ====//
 void BaselineAnalizer::saveCanvas(){
   TCanvas *c = new TCanvas(1);
   c -> cd() -> DrawFrame(m_baseline_peak_bin-20, 0, m_baseline_peak_bin+20, 700,

@@ -10,7 +10,7 @@ BIN_DIR	= ./bin
 ROOTCFLAGS = $(shell root-config --cflags)
 ROOTLIBS = $(shell root-config --libs)
 ROOTGLIBS = $(shell root-config --glibs)
-CXXFLAGS  = -g -fopenmp -MMD -MP -O3 -Wall -fPIC $(ROOTCFLAGS)
+CXXFLAGS  = -g -MMD -MP -O3 -Wall -fPIC $(ROOTCFLAGS)
 CXXLIBS    = $(ROOTLIBS) $(ROOTGLIBS)
 
 INCLUDE = -I$(INC_DIR)
