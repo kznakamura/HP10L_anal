@@ -9,10 +9,10 @@ namespace{
   extern const int MAXDRAWCH;
 }
 
-MyCanvas::MyCanvas(string canvas_name){
+MyCanvas::MyCanvas(string canvas_name, double position_x, double position_y){
 
 m_canvas_name = canvas_name;
-canvas = new TCanvas(m_canvas_name.c_str(), m_canvas_name.c_str(), 100, 100, 800*5, 600*5);
+canvas = new TCanvas(m_canvas_name.c_str(), m_canvas_name.c_str(), position_x, position_y, 800*5, 640*5);
 makeCanvas();
 
 }

@@ -9,7 +9,7 @@ namespace{
 
 class MyCanvas{
 public:
-  MyCanvas(std::string canvas_name);
+  MyCanvas(std::string canvas_name, double position_x=100.0, double position_y=100.0);
   ~MyCanvas();
   TCanvas* cloneCanvas(){return canvas;}
 
