@@ -5,6 +5,7 @@
 #include <TCanvas.h>
 #include <TApplication.h>
 #include <TText.h>
+#include <TPaveText.h>
 
 using namespace std;
 
@@ -49,6 +50,7 @@ int main(int argc, char* argv[]){
       y = wfm -> getAdc(ch);
       length = wfm -> getCurrentClockLength();
       g[draw_ch] = new TGraph(length,x,y);
+      g[draw_ch] -> SetMinimum(900);
       g[draw_ch] -> SetLineColor(4);
       g[draw_ch] -> SetTitle(";;");
       g[draw_ch] -> Draw("apl");
@@ -60,12 +62,18 @@ int main(int argc, char* argv[]){
       t_ylabel -> Draw("same");
     }
   }
+
+  c -> cd(0);
+  TPaveText *tp_info = new TPaveText(0.85,0.8,0.99,0.99);
+  tp_info -> AddText("plot information");
+  tp_info -> AddText(read_filename.c_str());
+  tp_info -> AddText(Form("event number = %d", draw_event));
+  tp_info -> Draw();
   app.Run();
   
   c -> Print(output_filename.c_str());
   cout << "# Save: --> \"" << output_filename << "\"" << endl;
   
   delete wfm;
-  delete my_canvas;
   
 }

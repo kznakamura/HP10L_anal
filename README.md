@@ -25,6 +25,13 @@
     * `getBaseline()`: return a baseline
     * `getBaselineSigma()`: return a baseline sigma      
 
+* MyCanvas
+  * is a class for making canvas of HP10L
+  * Useful functions of MyCanvas
+    * `MyCanvas(std::string canvas_name, double position_x=100.0, double position_y=100.0)`: constructor of MyCanvas
+    * `cloneCanvas()`: return TCanvas for square MPPC arrays of HP10L.
+
+
 #### Installation of this sample
   * `$ git clone <URL>`
   * `$ make`

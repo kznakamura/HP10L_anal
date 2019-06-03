@@ -60,6 +60,8 @@ void MyCanvas::makeCanvas(){
 			    0, 0.01, 0);    
     pad[draw_ch] -> Draw();
     pad[draw_ch] -> SetNumber(draw_ch+1);
+    pad[draw_ch] -> SetLeftMargin(0.13);
+    pad[draw_ch] -> SetRightMargin(0.07);
   }
 }
 

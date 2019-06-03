@@ -21,7 +21,7 @@ namespace{
 
 class Analizer{
 public:
-  Analizer(string input_filename, string output_filename, string canvas_header, const bool save_canvas=false);
+  Analizer(string input_filename, string output_filename, string gain_filename, string canvas_header, const bool save_canvas=false);
   ~Analizer();
 
   void drawCanvas();
@@ -43,7 +43,8 @@ private:
   double m_dark_error[MAXCH][MAXCYCLE] = {};
 
   //==== branch for recovery_header ====//
-  string m_gain_filename = "mppc_gain.txt";
+  string m_gain_filename;
+  double m_mppc_volt;
   double m_fit_range_min = 0.0;
   double m_fit_range_max = 1.0e5;
 
@@ -51,6 +52,7 @@ private:
   int m_max_cycle;
   int m_ch;
   double m_mppc_adc_gain;
+  int m_serial_num;
   double m_onepar_tau;
   double m_onepar_slope;
   double m_twopar_tau1;
@@ -69,6 +71,7 @@ private:
   //---- openMppcGainFile ----//
   bool openMppcGainFile();
   double m_input_mppc_gain[MAXCH] = {};
+  int m_input_serial_num[MAXCH] = {};
 
   //---- recovery time analysis ----//
   RecoveryOnepar *rec_onepar[MAXCH];
@@ -82,15 +85,14 @@ private:
   TF1 *f_recovery_twopar[MAXCH];
   TGraphErrors *g_onepar_residual[MAXCH];
   TGraphErrors *g_twopar_residual[MAXCH];
-  
-
 };
   
   
-Analizer::Analizer(string input_filename, string output_filename, string canvas_header, const bool save_canvas){
+Analizer::Analizer(string input_filename, string output_filename, string gain_filename, string canvas_header, const bool save_canvas){
   
   m_input_filename = input_filename;
   m_output_filename = output_filename;
+  m_gain_filename = gain_filename;
   m_canvas_header = canvas_header;
   m_save_canvas = save_canvas;
 
@@ -101,7 +103,7 @@ Analizer::Analizer(string input_filename, string output_filename, string canvas_
   TTree *integral_tree = ((TTree*)ifile -> Get("integral_tree"));
   integral_event_header -> Write();
   integral_header -> Write();
-  m_max_ch = integral_tree -> GetMaximum("ch");
+  m_max_ch = integral_tree -> GetMaximum("ch") + 1;
   m_max_cycle = integral_tree -> GetMaximum("max_cycle");
   
   for(int ch=0; ch<m_max_ch; ch++){
@@ -114,30 +116,35 @@ Analizer::Analizer(string input_filename, string output_filename, string canvas_
     }
   }
   
+  if(!openMppcGainFile()){
+    cout << "# Message: "
+	 << "default adc gain M=16.0 is used"<< endl;
+    for(int ch=0; ch<m_max_ch; ch++){
+      m_input_mppc_gain[ch] = 16.0;
+      m_input_serial_num[ch] = -1;
+    }
+  }
+  
   TTree *recovery_header = new TTree("recovery_header", "recovery_header");
   TTree *recovery_tree = new TTree("recovery_tree", "recovery_tree");
   recovery_header -> Branch("max_ch", &m_max_ch);
+  recovery_header -> Branch("mppc_volt", &m_mppc_volt);
   recovery_header -> Branch("gain_filename", &m_gain_filename);
+  recovery_header -> Branch("fitrange_min", &m_fit_range_min);
+  recovery_header -> Branch("fitrange_max", &m_fit_range_max);
   recovery_header -> Fill();
   recovery_header -> Write();
 
   recovery_tree -> Branch("max_cycle", &m_max_cycle);
   recovery_tree -> Branch("ch", &m_ch);
   recovery_tree -> Branch("mppc_adc_gain", &m_mppc_adc_gain);
+  recovery_tree -> Branch("serial_num", &m_serial_num);
   recovery_tree -> Branch("onepar_tau", &m_onepar_tau);
   recovery_tree -> Branch("onepar_slope", &m_onepar_slope);
   recovery_tree -> Branch("twopar_tau1", &m_twopar_tau1);
   recovery_tree -> Branch("twopar_tau2", &m_twopar_tau2);
   recovery_tree -> Branch("twopar_alpha", &m_twopar_alpha);
   recovery_tree -> Branch("twopar_beta", &m_twopar_beta);
-  recovery_tree -> Branch("calib_integral_mean", 
-			  m_calib_integral_mean, "calib_integral_mean[max_cycle]/D");
-  recovery_tree -> Branch("ref_integral_mean", 
-			  m_ref_integral_mean, "ref_integral_mean[max_cycle]/D");
-  recovery_tree -> Branch("calib_integral_error", 
-			  m_calib_integral_error, "calib_integral_error[max_cycle]/D");
-  recovery_tree -> Branch("ref_integral_error", 
-			  m_ref_integral_error, "ref_integral_error[max_cycle]/D");
   recovery_tree -> Branch("nobs_mean", 
 			  m_nobs_mean, "nobs_mean[max_cycle]/D");
   recovery_tree -> Branch("nref_mean", 
@@ -147,15 +154,6 @@ Analizer::Analizer(string input_filename, string output_filename, string canvas_
   recovery_tree -> Branch("nref_error", 
 			  m_nref_error, "nref_error[max_cycle]/D");
   
-  
-  if(!openMppcGainFile()){
-    cout << "# Message: "
-	 << "default adc gain M=16.0 is used"<< endl;
-    for(int ch=0; ch<m_max_ch; ch++){
-      m_input_mppc_gain[ch] = 16.0;
-    }
-  }
-  
   for(int cy=0; cy<m_max_cycle; cy++){
    m_ref_integral_mean[cy] 
      = m_integral_mean[m_reference_ch][cy] - m_dark_mean[m_reference_ch][cy];    
@@ -164,7 +162,10 @@ Analizer::Analizer(string input_filename, string output_filename, string canvas_
 
   for(int ch=0; ch<m_max_ch; ch++){
     m_ch = ch;
-    cout << "ch: " << ch << endl;
+    cout << "ch=" << ch 
+	 << ", serial=" << m_input_serial_num[ch] 
+	 << ", gain=" << m_input_mppc_gain[ch]
+	 << endl;
     for(int cy=0; cy<m_max_cycle; cy++){
       m_calib_integral_mean[cy] = m_integral_mean[ch][cy] - m_dark_mean[ch][cy];
       m_calib_integral_error[cy] = m_integral_error[ch][cy];
@@ -178,9 +179,9 @@ Analizer::Analizer(string input_filename, string output_filename, string canvas_
 					m_calib_integral_mean, m_ref_integral_mean,
 					m_calib_integral_error, m_ref_integral_error,
 					m_fit_range_min, m_fit_range_max);
-    
-       
+           
     m_mppc_adc_gain = m_input_mppc_gain[ch];
+    m_serial_num = m_input_serial_num[ch];
     m_onepar_tau = rec_onepar[ch] -> getTau();
     m_onepar_slope = rec_onepar[ch] -> getSlope();
     m_twopar_tau1 = rec_twopar[ch] -> getTau1();
@@ -223,9 +224,14 @@ bool Analizer::openMppcGainFile(){
 	 << "\"" << m_gain_filename << "\"" << endl;
     return false;
   }
-  
+
+  f_gain >> m_mppc_volt;
   for(int ch=0; ch<m_max_ch; ch++){
-    f_gain >> m_input_mppc_gain[ch];
+    f_gain >> m_input_mppc_gain[ch] >> m_input_serial_num[ch];
+    if((ch!=0 && m_input_mppc_gain[ch]<0) || !f_gain){
+      m_input_mppc_gain[ch] = m_input_mppc_gain[ch-1];
+      cout << "# Message: no gain in ch=" << ch << ". used ch=" << ch-1 << " gain." << endl;
+    } 
   }
   return true;
 }
@@ -233,11 +239,11 @@ bool Analizer::openMppcGainFile(){
 void Analizer::drawCanvas(){
   for(int ch=0; ch<m_max_ch; ch++){
     g_adc[ch] = rec_onepar[ch] -> getAdcPlot();
-    g_adc[ch] -> SetTitle(";;");
+    g_adc[ch] -> SetTitle(Form("serial=%d;;",m_input_serial_num[ch]));
     f_linear[ch] = rec_onepar[ch] -> getLinearFit();
     g_linear_residual[ch] = rec_onepar[ch] -> getLinearResidualPlot();
     g_photon[ch] = rec_onepar[ch] -> getPhotonPlot();
-    g_photon[ch] -> SetTitle(";;");
+    g_photon[ch] -> SetTitle(Form("serial=%d;;",m_input_serial_num[ch]));
     f_recovery_onepar[ch] = rec_onepar[ch] -> getRecoveryFit();
     f_recovery_twopar[ch] = rec_twopar[ch] -> getRecoveryFit();
     g_onepar_residual[ch] = rec_onepar[ch] -> getRecoveryResidualPlot();
@@ -246,15 +252,15 @@ void Analizer::drawCanvas(){
   //  TApplication app("app",0,0,0,0);
   
   TText *t_ch[m_max_ch];
-  TText *t_x_adc = new TText(0.6, 0.01,"ADC count");
-  TText *t_y_adc = new TText(0.07, 0.5, "ADC count");
+  TText *t_x_adc = new TText(0.5, 0.01,"ADC count");
+  TText *t_y_adc = new TText(0.05, 0.5, "ADC count");
   t_x_adc -> SetTextSize(0.08);
   t_y_adc -> SetTextSize(0.08);
   t_x_adc -> SetNDC(1);
   t_y_adc -> SetNDC(1);
   t_y_adc -> SetTextAngle(90);
   for(int ch=0; ch<m_max_ch; ch++){
-    t_ch[ch] = new TText(0.15, 0.75, Form("ch%d",ch));
+    t_ch[ch] = new TText(0.2, 0.75, Form("ch%d",ch));
     t_ch[ch] -> SetNDC(1);
     t_ch[ch] -> SetTextSize(0.15);
   }
@@ -269,9 +275,9 @@ void Analizer::drawCanvas(){
     t_y_adc -> Draw();
   }
 
-  TText *t_nref = new TText(0.5, 0.01,"Nref (photons/us)");
-  TText *t_nobs = new TText(0.07, 0.2,"Nobs (photons/us)");
-  TText *t_residual = new TText(0.07, 0.6,"Data/Fit");
+  TText *t_nref = new TText(0.3, 0.01,"Nref (photons/us)");
+  TText *t_nobs = new TText(0.05, 0.2,"Nobs (photons/us)");
+  TText *t_residual = new TText(0.05, 0.6,"Data/Fit");
   t_nref -> SetTextSize(0.08);
   t_nobs -> SetTextSize(0.08);
   t_residual -> SetTextSize(0.08);
@@ -325,21 +331,25 @@ void Analizer::drawCanvas(){
 }
 
 int main(int argc, char* argv[]){
-  if(argc!=4){
+  if(argc!=5){
     cout << "# Usage: " << argv[0] << " "
-         << "[path to ana_sum_integ_***.root] [output_filename] [canvas header]"
+         << "[path to ana_sum_integ_***.root]"
+	 << " [output filename]"
+	 << " [gain filename]"
+	 << " [canvas header]"
          << endl;
     return -1;
   }
 
   const string input_filename = argv[1];
   const string output_filename = argv[2];
-  const string canvas_header = argv[3];
+  const string gain_filename = argv[3];
+  const string canvas_header = argv[4];
   const bool save_canvas = true;
 
   gStyle -> SetMarkerStyle(20);
 
-  Analizer *anal = new Analizer(input_filename, output_filename, canvas_header, save_canvas);
+  Analizer *anal = new Analizer(input_filename, output_filename, gain_filename, canvas_header, save_canvas);
 
   anal->drawCanvas();
   
