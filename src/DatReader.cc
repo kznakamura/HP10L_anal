@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <bitset>
 
 using namespace std;
 
@@ -72,6 +73,7 @@ bool DatReader::openFile(string filename){
     return false;
   }
 
+
   m_current_event_num = -1;
   m_current_module_num = 0;
   m_current_clock_length = 0;
@@ -115,7 +117,7 @@ bool DatReader::readFileHeader(){
   //---- check dummy of header ----//
   for(int module_num=0; module_num<::MAXMODULE; module_num++){
     if(file_header1[120+module_num] != 511){
-      cerr << "#Error :File header format is broken" << endl;
+      cerr << "# Error :File header format is broken" << endl;
       return false;
     }
   }
@@ -123,7 +125,7 @@ bool DatReader::readFileHeader(){
   setDataFormat();
   
   if(m_is_debug){
-    cout << "#debug :File header is read" << endl;
+    cout << "# debug: File header is read" << endl;
   }
   return true;
 }
@@ -138,22 +140,37 @@ bool DatReader::showFileHeader(){
   cout << "//------------ File Header List ----------//" << endl;
   int width = 25;
   cout << left;
-  cout << setw(width) << "File event num" << "| " << m_max_event_num << "\n";
-  cout << setw(width) << "Module num" << "| " << m_max_module_num << "\n";
+  cout << setw(width) << "File event num" << "| " 
+       << m_max_event_num << "\n";
+  cout << setw(width) << "Module num"     << "| " 
+       << m_max_module_num << "\n";
   
   for(int module_num=0; module_num<m_max_module_num; module_num++){
     cout << "\n"
 	 << "<< module: " << module_num << " >>" << endl;
-    cout << setw(width) << "Model ID"     << "| " << m_model_id.at(module_num) << "\n";
-    cout << setw(width) << "Serial num"   << "| " << m_serial_num.at(module_num) << "\n";
-    cout << setw(width) << "ADC bit num"  << "| " << m_adc_bit_num.at(module_num) << " bit\n";
-    cout << setw(width) << "Module ch"    << "| " << m_read_ch_num.at(module_num) << " ch\n";
-    cout << setw(width) << "Sampling period" << "| " << m_sampling_us.at(module_num) << " ns\n";
-    cout << setw(width) << "Post trigger" << "| " << m_post_trigger_rate.at(module_num) << " \%\n";
-    cout << setw(width) << "Trigger edge" << "| " << m_trigger_edge.at(module_num) << "\n";
-    cout << setw(width) << "Ext trigger mode" << "| " << m_ext_trigger_mode.at(module_num) << "\n";
-    cout << setw(width) << "Record length" << "| " << m_record_length.at(module_num) << " clock\n";
-    cout << setw(width) << "Save enable mask" << "| " << m_save_enable_mask.at(module_num) << "\n";
+    cout << setw(width) << "Model ID"     << "| " 
+	 << m_model_id.at(module_num) << "\n";
+    cout << setw(width) << "Serial num"   << "| " 
+	 << m_serial_num.at(module_num) << "\n";
+    cout << setw(width) << "ADC bit num"  << "| " 
+	 << m_adc_bit_num.at(module_num) << " bit\n";
+    cout << setw(width) << "Module ch"    << "| " 
+	 << m_read_ch_num.at(module_num) << " ch\n";
+    cout << setw(width) << "Sampling period" << "| " 
+	 << m_sampling_us.at(module_num) << " ns\n";
+    cout << setw(width) << "Post trigger" << "| " 
+	 << m_post_trigger_rate.at(module_num) << " \%\n";
+    cout << setw(width) << "Trigger edge" << "| " 
+	 << m_trigger_edge.at(module_num) << "\n";
+    cout << setw(width) << "Ext trigger mode" << "| " 
+	 << m_ext_trigger_mode.at(module_num) << "\n";
+    cout << setw(width) << "Record length" << "| " 
+	 << m_record_length.at(module_num) << " clock\n";
+    cout << setw(width) << "Save enable mask" << "| " 
+	 << "ch32<- " 
+	 << bitset<32>(m_save_enable_mask.at(module_num)) 
+	 << " ->ch0" 
+	 << "\n";
   }
 
     cout << "\n";
@@ -168,7 +185,7 @@ void DatReader::setDataFormat(){
   for(int module_num=0; module_num<m_max_module_num; module_num++){
     m_module_data_size.push_back( 
 				 sizeof(short) 
-				 *m_read_ch_num.at(module_num)
+				 *__builtin_popcount(m_save_enable_mask.at(module_num))
 				 *m_record_length.at(module_num) 
 				  );
   }
@@ -264,8 +281,9 @@ bool DatReader::readModuleData(int event_num, int read_module_num){
   
   int array_size = m_record_length.at(read_module_num)*m_read_ch_num.at(read_module_num);
   m_module_data = new short[array_size];
-  m_fin -> read((char*)m_module_data, m_module_data_size.at(read_module_num));
   
+  m_fin -> read((char*)m_module_data, m_module_data_size.at(read_module_num));
+      
   m_adc = new double[array_size];
   m_clock = new double[array_size];
   m_time = new double[array_size];
@@ -294,7 +312,7 @@ bool DatReader::getEvent(int event_num, int read_module_num){
     m_current_module_num = 0;
     return false;
   }
-
+  
   m_current_event_num = event_num;
   m_current_module_num = read_module_num;
   m_current_clock_length = m_record_length.at(read_module_num);
@@ -309,17 +327,27 @@ double* DatReader::getAdc(int read_ch){
   if(!checkFile() || !checkEvent()){
     return nullptr;
   }
-
-  if(read_ch<0 || read_ch>=m_read_ch_num.at(m_current_module_num)){
+  
+  if( read_ch<0 || !((m_save_enable_mask.at(m_current_module_num)>>read_ch) & 0b1) ){
     cerr << "# Error: read_ch is out of range" << endl;
     return nullptr;
   }
+
+  int zero_bit_num = 0;
+  for(int i=0; i<read_ch; i++){
+    if( !( m_save_enable_mask.at(m_current_module_num)>>i & 0b1 ) ){
+      zero_bit_num++;
+    }
+  }
+  if(m_is_debug){
+    cout << "# debug: zero_bit_num = " << zero_bit_num << endl;
+  }
   
-  return m_adc+m_current_clock_length*read_ch;
+  return m_adc+m_current_clock_length*(read_ch-zero_bit_num);
 }
 
 double* DatReader::getClock(){  
-
+  
   if(!checkFile() || !checkEvent()){
     return nullptr;
   }

@@ -6,7 +6,7 @@ void mcr_DatReader(string filename = "dummy"){
     return 0;
   }
 
-  DatReader *m = new DatReader(filename);;
+  DatReader *m = new DatReader(filename, false);;
   double *x, *y;
   int length;
   TGraph *g;
@@ -16,7 +16,7 @@ void mcr_DatReader(string filename = "dummy"){
   int event, module, ch;
   int max_event_num = m->getMaxEventNum();
   int max_module_num = m->getMaxModuleNum();
-  int current_maxch_num;
+  int save_enable_mask;
 
   m -> showFileHeader(); 
   for(int i=0; i<10; i++){
@@ -34,15 +34,12 @@ void mcr_DatReader(string filename = "dummy"){
       continue;
     }
     m -> getEvent(event,module);
-    current_maxch_num = m-> getCurrentMaxchNum();
-    cout << "draw ch (0~" << current_maxch_num-1 << "): " << endl;
+    save_enable_mask = m-> getSaveEnableMask(module);
+    cout << "draw ch (emable_mask; ch32<- " << bitset<32>(save_enable_mask) << " ->ch0): " << endl;
     cin >> ch;
-    if(ch<0 || ch>= current_maxch_num){
-      cout << "input ch num is out of range" << endl;
-      continue;
-    }
+
+    if( (y = m->getAdc(ch)) == nullptr ) continue;
     x = m->getClock();
-    y = m->getAdc(ch);
     length = m->getCurrentClockLength();
 
     g = new TGraph(length, x, y);
